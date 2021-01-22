@@ -1100,11 +1100,11 @@ namespace UnityEngine.Rendering.HighDefinition
             }
         }
 
-        internal void PushFullScreenDebugTexture(RenderGraph renderGraph, TextureHandle input, FullScreenDebugMode debugMode)
+        internal void PushFullScreenDebugTexture(RenderGraph renderGraph, TextureHandle input, FullScreenDebugMode debugMode, bool xrTexture = true)
         {
             if (debugMode == m_CurrentDebugDisplaySettings.data.fullScreenDebugMode)
             {
-                PushFullScreenDebugTexture(renderGraph, input);
+                PushFullScreenDebugTexture(renderGraph, input, xrTexture: xrTexture);
             }
         }
 
@@ -1118,7 +1118,7 @@ namespace UnityEngine.Rendering.HighDefinition
             }
         }
 
-        void PushFullScreenDebugTexture(RenderGraph renderGraph, TextureHandle input, int mipIndex = -1)
+        void PushFullScreenDebugTexture(RenderGraph renderGraph, TextureHandle input, int mipIndex = -1, bool xrTexture = true)
         {
             using (var builder = renderGraph.AddRenderPass<PushFullScreenDebugPassData>("Push Full Screen Debug", out var passData))
             {
@@ -1130,10 +1130,20 @@ namespace UnityEngine.Rendering.HighDefinition
                 builder.SetRenderFunc(
                     (PushFullScreenDebugPassData data, RenderGraphContext ctx) =>
                     {
-                        if (data.mipIndex != -1)
-                            HDUtils.BlitCameraTexture(ctx.cmd, data.input, data.output, data.mipIndex);
+                        if (xrTexture)
+                        {
+                            if (data.mipIndex != -1)
+                                HDUtils.BlitCameraTexture(ctx.cmd, data.input, data.output, data.mipIndex);
+                            else
+                                HDUtils.BlitCameraTexture(ctx.cmd, data.input, data.output);
+                        }
                         else
-                            HDUtils.BlitCameraTexture(ctx.cmd, data.input, data.output);
+                        {
+                            if (data.mipIndex != -1)
+                                HDUtils.BlitCameraTexture2D(ctx.cmd, data.input, data.output, data.mipIndex);
+                            else
+                                HDUtils.BlitCameraTexture2D(ctx.cmd, data.input, data.output);
+                        }
                     });
 
                 m_DebugFullScreenTexture = passData.output;
