@@ -19,8 +19,8 @@ namespace UnityEngine.Rendering.HighDefinition
         int m_ReprojectGlobalIlluminationKernel;
         int m_ReprojectGlobalIlluminationHalfKernel;
         int m_BilateralUpSampleColorKernel;
-        int m_ConvertYCoCgToRGBKernel;
-        int m_ConvertYCoCgToRGBHalfKernel;
+        int m_ConvertSSGIKernel;
+        int m_ConvertSSGIHalfKernel;
 
         void InitScreenSpaceGlobalIllumination()
         {
@@ -36,8 +36,8 @@ namespace UnityEngine.Rendering.HighDefinition
                 m_ReprojectGlobalIlluminationKernel = ssGICS.FindKernel("ReprojectGlobalIllumination");
                 m_ReprojectGlobalIlluminationHalfKernel = ssGICS.FindKernel("ReprojectGlobalIlluminationHalf");
                 m_BilateralUpSampleColorKernel = bilateralUpsampleCS.FindKernel("BilateralUpSampleColor");
-                m_ConvertYCoCgToRGBKernel = ssGICS.FindKernel("ConvertYCoCgToRGB");
-                m_ConvertYCoCgToRGBHalfKernel = ssGICS.FindKernel("ConvertYCoCgToRGBHalf");
+                m_ConvertSSGIKernel = ssGICS.FindKernel("ConvertSSGI");
+                m_ConvertSSGIHalfKernel = ssGICS.FindKernel("ConvertSSGIHalf");
             }
         }
 
@@ -73,6 +73,7 @@ namespace UnityEngine.Rendering.HighDefinition
             public bool fullResolutionSS;
             public float thickness;
             public int raySteps;
+            public int frameIndex;
             public Vector4 colorPyramidUvScaleAndLimitPrevFrame;
 
             // Compute Shader
@@ -91,7 +92,7 @@ namespace UnityEngine.Rendering.HighDefinition
             SSGITraceParameters parameters = new SSGITraceParameters();
 
             // Set the camera parameters
-            if (settings.fullResolutionSS)
+            if (true)
             {
                 parameters.texWidth = hdCamera.actualWidth;
                 parameters.texHeight = hdCamera.actualHeight;
@@ -108,15 +109,16 @@ namespace UnityEngine.Rendering.HighDefinition
             // Set the generation parameters
             parameters.nearClipPlane = hdCamera.camera.nearClipPlane;
             parameters.farClipPlane = hdCamera.camera.farClipPlane;
-            parameters.fullResolutionSS = settings.fullResolutionSS;
+            parameters.fullResolutionSS = true;
             parameters.thickness = settings.depthBufferThickness.value;
             parameters.raySteps = settings.raySteps;
+            parameters.frameIndex = RayTracingFrameIndex(hdCamera, 16);
             parameters.colorPyramidUvScaleAndLimitPrevFrame = HDUtils.ComputeViewportScaleAndLimit(hdCamera.historyRTHandleProperties.previousViewportSize, hdCamera.historyRTHandleProperties.previousRenderTargetSize);
 
             // Grab the right kernel
             parameters.ssGICS = m_Asset.renderPipelineResources.shaders.screenSpaceGlobalIlluminationCS;
-            parameters.traceKernel = settings.fullResolutionSS ? m_TraceGlobalIlluminationKernel : m_TraceGlobalIlluminationHalfKernel;
-            parameters.projectKernel = settings.fullResolutionSS ? m_ReprojectGlobalIlluminationKernel : m_ReprojectGlobalIlluminationHalfKernel;
+            parameters.traceKernel = true ? m_TraceGlobalIlluminationKernel : m_TraceGlobalIlluminationHalfKernel;
+            parameters.projectKernel = true ? m_ReprojectGlobalIlluminationKernel : m_ReprojectGlobalIlluminationHalfKernel;
 
             BlueNoise blueNoise = GetBlueNoiseManager();
             parameters.ditheredTextureSet = blueNoise.DitheredTextureSet8SPP();
@@ -130,6 +132,7 @@ namespace UnityEngine.Rendering.HighDefinition
         {
             // Input buffers
             public RTHandle depthTexture;
+            public RTHandle stencilTexture;
             public RTHandle normalBuffer;
             public RTHandle motionVectorsBuffer;
             public RTHandle colorPyramid;
@@ -157,6 +160,7 @@ namespace UnityEngine.Rendering.HighDefinition
             cmd.SetComputeFloatParam(parameters.ssGICS, HDShaderIDs._IndirectDiffuseThicknessScale, thicknessScale);
             cmd.SetComputeFloatParam(parameters.ssGICS, HDShaderIDs._IndirectDiffuseThicknessBias, thicknessBias);
             cmd.SetComputeIntParam(parameters.ssGICS, HDShaderIDs._IndirectDiffuseSteps, parameters.raySteps);
+            cmd.SetComputeIntParam(parameters.ssGICS, HDShaderIDs._IndirectDiffuseFrameIndex, parameters.frameIndex);
             // Inject half screen size if required
             if (!parameters.fullResolutionSS)
                 cmd.SetComputeVectorParam(parameters.ssGICS, HDShaderIDs._HalfScreenSize, parameters.halfScreenSize);
@@ -179,9 +183,11 @@ namespace UnityEngine.Rendering.HighDefinition
 
             // Inject all the input scalars
             cmd.SetComputeVectorParam(parameters.ssGICS, HDShaderIDs._ColorPyramidUvScaleAndLimitPrevFrame, parameters.colorPyramidUvScaleAndLimitPrevFrame);
+            cmd.SetComputeIntParam(parameters.ssGICS, HDShaderIDs._ObjectMotionStencilBit, (int)StencilUsage.ObjectMotionVector);
 
             // Bind all the input buffers
             cmd.SetComputeTextureParam(parameters.ssGICS, parameters.projectKernel, HDShaderIDs._DepthTexture, resources.depthTexture);
+            cmd.SetComputeTextureParam(parameters.ssGICS, parameters.projectKernel, HDShaderIDs._StencilTexture, resources.stencilTexture, 0, RenderTextureSubElement.Stencil);
             cmd.SetComputeTextureParam(parameters.ssGICS, parameters.projectKernel, HDShaderIDs._NormalBufferTexture, resources.normalBuffer);
             cmd.SetComputeTextureParam(parameters.ssGICS, parameters.projectKernel, HDShaderIDs._CameraMotionVectorsTexture, resources.motionVectorsBuffer);
             cmd.SetComputeTextureParam(parameters.ssGICS, parameters.projectKernel, HDShaderIDs._IndirectDiffuseHitPointTexture, resources.hitPointBuffer);
@@ -229,10 +235,8 @@ namespace UnityEngine.Rendering.HighDefinition
 
             // Grab the right kernel
             parameters.ssGICS = m_Asset.renderPipelineResources.shaders.screenSpaceGlobalIlluminationCS;
-            parameters.convertKernel = halfResolution ? m_ConvertYCoCgToRGBHalfKernel : m_ConvertYCoCgToRGBKernel;
-
+            parameters.convertKernel = halfResolution ? m_ConvertSSGIHalfKernel : m_ConvertSSGIKernel;
             parameters.offsetBuffer = m_DepthBufferMipChainInfo.GetOffsetBufferData(m_DepthPyramidMipLevelOffsetsBuffer);
-
             return parameters;
         }
 
@@ -241,24 +245,28 @@ namespace UnityEngine.Rendering.HighDefinition
             public RTHandle depthTexture;
             public RTHandle stencilBuffer;
             public RTHandle normalBuffer;
-            public RTHandle inoutBuffer0;
-            public RTHandle inputBufer1;
+            public RTHandle inputBuffer0;
+            public RTHandle inputBuffer1;
+            public RTHandle outputBuffer;
         }
 
         static void ExecuteSSGIConversion(CommandBuffer cmd, SSGIConvertParameters parameters, SSGIConvertResources resources)
         {
-            // Re-evaluate the dispatch parameters (we are evaluating the upsample in full resolution)
             int ssgiTileSize = 8;
             int numTilesXHR = (parameters.texWidth + (ssgiTileSize - 1)) / ssgiTileSize;
             int numTilesYHR = (parameters.texHeight + (ssgiTileSize - 1)) / ssgiTileSize;
 
+            cmd.SetComputeIntParams(parameters.ssGICS, HDShaderIDs._SsrStencilBit, (int)StencilUsage.TraceReflectionRay);
             cmd.SetComputeTextureParam(parameters.ssGICS, parameters.convertKernel, HDShaderIDs._DepthTexture, resources.depthTexture);
             cmd.SetComputeTextureParam(parameters.ssGICS, parameters.convertKernel, HDShaderIDs._NormalBufferTexture, resources.normalBuffer);
             cmd.SetComputeBufferParam(parameters.ssGICS, parameters.convertKernel, HDShaderIDs._DepthPyramidMipLevelOffsets, parameters.offsetBuffer);
-            cmd.SetComputeTextureParam(parameters.ssGICS, parameters.convertKernel, HDShaderIDs._IndirectDiffuseTexture0RW, resources.inoutBuffer0);
-            cmd.SetComputeTextureParam(parameters.ssGICS, parameters.convertKernel, HDShaderIDs._IndirectDiffuseTexture1, resources.inputBufer1);
             cmd.SetComputeTextureParam(parameters.ssGICS, parameters.convertKernel, HDShaderIDs._StencilTexture, resources.stencilBuffer, 0, RenderTextureSubElement.Stencil);
-            cmd.SetComputeIntParams(parameters.ssGICS, HDShaderIDs._SsrStencilBit, (int)StencilUsage.TraceReflectionRay);
+
+            cmd.SetComputeTextureParam(parameters.ssGICS, parameters.convertKernel, HDShaderIDs._IndirectDiffuseTexture0, resources.inputBuffer0);
+            cmd.SetComputeTextureParam(parameters.ssGICS, parameters.convertKernel, HDShaderIDs._IndirectDiffuseTexture1, resources.inputBuffer1);
+
+            cmd.SetComputeTextureParam(parameters.ssGICS, parameters.convertKernel, HDShaderIDs._IndirectDiffuseTextureRW, resources.outputBuffer);
+
             cmd.DispatchCompute(parameters.ssGICS, parameters.convertKernel, numTilesXHR, numTilesYHR, parameters.viewCount);
         }
 
