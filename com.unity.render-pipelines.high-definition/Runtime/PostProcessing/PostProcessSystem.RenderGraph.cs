@@ -860,7 +860,13 @@ namespace UnityEngine.Rendering.HighDefinition
                 {
                     passData.source = builder.ReadTexture(source);
                     passData.parameters = PrepareContrastAdaptiveSharpeningParameters(hdCamera);
-                    TextureHandle dest = GetPostprocessOutputHandle(renderGraph, "Contrast Adaptive Sharpen Destination");
+                    TextureHandle dest = renderGraph.CreateTexture(new TextureDesc(Vector2.one, false, true)
+                    {
+                        name = "Contrast Adaptive Sharpen Destination",
+                        colorFormat = m_ColorFormat,
+                        useMipMap = false,
+                        enableRandomWrite = true
+                    });
                     passData.destination = builder.WriteTexture(dest);;
 
                     passData.casParametersBuffer = builder.CreateTransientComputeBuffer(new ComputeBufferDesc(2, sizeof(uint) * 4) { name = "Cas Parameters" });
