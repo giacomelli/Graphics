@@ -30,7 +30,7 @@ void ClipHoles(float2 uv)
 }
 #endif
 
-struct Attributes
+struct TerrainAttributes
 {
     float4 positionOS : POSITION;
     float3 normalOS : NORMAL;
@@ -38,7 +38,7 @@ struct Attributes
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-struct Varyings
+struct TerrainVaryings
 {
     float4 uvMainAndLM              : TEXCOORD0; // xy: control, zw: lightmap
 #ifndef TERRAIN_SPLAT_BASEPASS
@@ -69,7 +69,7 @@ struct Varyings
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
-void InitializeInputData(Varyings IN, half3 normalTS, out InputData input)
+void InitializeInputData(TerrainVaryings IN, half3 normalTS, out InputData input)
 {
     input = (InputData)0;
 
@@ -267,9 +267,9 @@ void TerrainInstancing(inout float4 positionOS, inout float3 normal)
 ///////////////////////////////////////////////////////////////////////////////
 
 // Used in Standard Terrain shader
-Varyings SplatmapVert(Attributes v)
+TerrainVaryings SplatmapVertex(TerrainAttributes v)
 {
-    Varyings o = (Varyings)0;
+    TerrainVaryings o = (TerrainVaryings)0;
 
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
@@ -319,7 +319,7 @@ Varyings SplatmapVert(Attributes v)
     return o;
 }
 
-void ComputeMasks(out half4 masks[4], half4 hasMask, Varyings IN)
+void ComputeMasks(out half4 masks[4], half4 hasMask, TerrainVaryings IN)
 {
     masks[0] = 0.5h;
     masks[1] = 0.5h;
@@ -345,9 +345,9 @@ void ComputeMasks(out half4 masks[4], half4 hasMask, Varyings IN)
 
 // Used in Standard Terrain shader
 #ifdef TERRAIN_GBUFFER
-FragmentOutput SplatmapFragment(Varyings IN)
+FragmentOutput SplatmapFragment(TerrainVaryings IN)
 #else
-half4 SplatmapFragment(Varyings IN) : SV_TARGET
+half4 SplatmapFragment(TerrainVaryings IN) : SV_TARGET
 #endif
 {
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
@@ -447,7 +447,7 @@ half4 SplatmapFragment(Varyings IN) : SV_TARGET
 float3 _LightDirection;
 float3 _LightPosition;
 
-struct AttributesLean
+struct TerrainAttributesLean
 {
     float4 position     : POSITION;
     float3 normalOS       : NORMAL;
@@ -457,7 +457,7 @@ struct AttributesLean
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-struct VaryingsLean
+struct TerrainVaryingsLean
 {
     float4 clipPos      : SV_POSITION;
 #ifdef _ALPHATEST_ON
@@ -466,9 +466,9 @@ struct VaryingsLean
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
-VaryingsLean ShadowPassVertex(AttributesLean v)
+TerrainVaryingsLean ShadowPassVertex(TerrainAttributesLean v)
 {
-    VaryingsLean o = (VaryingsLean)0;
+    TerrainVaryingsLean o = (TerrainVaryingsLean)0;
     UNITY_SETUP_INSTANCE_ID(v);
     TerrainInstancing(v.position, v.normalOS);
 
@@ -498,7 +498,7 @@ VaryingsLean ShadowPassVertex(AttributesLean v)
     return o;
 }
 
-half4 ShadowPassFragment(VaryingsLean IN) : SV_TARGET
+half4 ShadowPassFragment(TerrainVaryingsLean IN) : SV_TARGET
 {
 #ifdef _ALPHATEST_ON
     ClipHoles(IN.texcoord);
@@ -508,9 +508,9 @@ half4 ShadowPassFragment(VaryingsLean IN) : SV_TARGET
 
 // Depth pass
 
-VaryingsLean DepthOnlyVertex(AttributesLean v)
+TerrainVaryingsLean DepthOnlyVertex(TerrainAttributesLean v)
 {
-    VaryingsLean o = (VaryingsLean)0;
+    TerrainVaryingsLean o = (TerrainVaryingsLean)0;
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
     TerrainInstancing(v.position, v.normalOS);
@@ -521,7 +521,7 @@ VaryingsLean DepthOnlyVertex(AttributesLean v)
     return o;
 }
 
-half4 DepthOnlyFragment(VaryingsLean IN) : SV_TARGET
+half4 DepthOnlyFragment(TerrainVaryingsLean IN) : SV_TARGET
 {
 #ifdef _ALPHATEST_ON
     ClipHoles(IN.texcoord);
@@ -535,7 +535,7 @@ half4 DepthOnlyFragment(VaryingsLean IN) : SV_TARGET
 
 
 // DepthNormal pass
-struct AttributesDepthNormal
+struct TerrainAttributesDepthNormal
 {
     float4 positionOS : POSITION;
     float3 normalOS : NORMAL;
@@ -543,7 +543,7 @@ struct AttributesDepthNormal
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-struct VaryingsDepthNormal
+struct TerrainVaryingsDepthNormal
 {
     float4 uvMainAndLM              : TEXCOORD0; // xy: control, zw: lightmap
     #ifndef TERRAIN_SPLAT_BASEPASS
@@ -563,9 +563,9 @@ struct VaryingsDepthNormal
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
-VaryingsDepthNormal DepthNormalOnlyVertex(AttributesDepthNormal v)
+TerrainVaryingsDepthNormal DepthNormalOnlyVertex(TerrainAttributesDepthNormal v)
 {
-    VaryingsDepthNormal o = (VaryingsDepthNormal)0;
+    TerrainVaryingsDepthNormal o;
 
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
@@ -601,7 +601,7 @@ VaryingsDepthNormal DepthNormalOnlyVertex(AttributesDepthNormal v)
     return o;
 }
 
-half4 DepthNormalOnlyFragment(VaryingsDepthNormal IN) : SV_TARGET
+half4 DepthNormalOnlyFragment(TerrainVaryingsDepthNormal IN) : SV_TARGET
 {
     #ifdef _ALPHATEST_ON
         ClipHoles(IN.uvMainAndLM.xy);

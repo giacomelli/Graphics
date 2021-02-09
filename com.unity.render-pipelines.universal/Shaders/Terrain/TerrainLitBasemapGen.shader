@@ -60,9 +60,9 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Basemap Gen)"
             #pragma vertex Vert
             #pragma fragment Frag
 
-            Varyings Vert(Attributes IN)
+            TerrainVaryings Vert(TerrainAttributes IN)
             {
-                Varyings output = (Varyings) 0;
+                TerrainVaryings output = (TerrainVaryings) 0;
 
                 output.clipPos = TransformWorldToHClip(IN.positionOS.xyz);
 
@@ -78,7 +78,7 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Basemap Gen)"
                 return output;
             }
 
-            half4 Frag(Varyings IN) : SV_Target
+            half4 Frag(TerrainVaryings IN) : SV_Target
             {
                 half3 normalTS = half3(0.0h, 0.0h, 1.0h);
                 half4 splatControl;
@@ -142,9 +142,9 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Basemap Gen)"
             #pragma vertex Vert
             #pragma fragment Frag
 
-            Varyings Vert(Attributes IN)
+            TerrainVaryings Vert(TerrainAttributes IN)
             {
-                Varyings output = (Varyings)0;
+                TerrainVaryings output = (TerrainVaryings)0;
 
                 output.clipPos = TransformWorldToHClip(IN.positionOS.xyz);
 
@@ -158,7 +158,7 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Basemap Gen)"
                 return output;
             }
 
-            half4 Frag(Varyings IN) : SV_Target
+            half4 Frag(TerrainVaryings IN) : SV_Target
             {
                 half3 normalTS = half3(0.0h, 0.0h, 1.0h);
                 half4 splatControl;

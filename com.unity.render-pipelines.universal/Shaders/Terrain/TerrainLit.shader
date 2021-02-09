@@ -54,10 +54,11 @@ Shader "Universal Render Pipeline/Terrain/Lit"
         {
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
+
             HLSLPROGRAM
             #pragma target 3.0
 
-            #pragma vertex SplatmapVert
+            #pragma vertex SplatmapVertex
             #pragma fragment SplatmapFragment
 
             #define _METALLICSPECGLOSSMAP 1
@@ -128,7 +129,7 @@ Shader "Universal Render Pipeline/Terrain/Lit"
             HLSLPROGRAM
             #pragma exclude_renderers gles
             #pragma target 3.0
-            #pragma vertex SplatmapVert
+            #pragma vertex SplatmapVertex
             #pragma fragment SplatmapFragment
 
             #define _METALLICSPECGLOSSMAP 1
@@ -235,7 +236,7 @@ Shader "Universal Render Pipeline/Terrain/Lit"
             HLSLPROGRAM
             #pragma target 3.0
 
-            #pragma vertex SplatmapVert
+            #pragma vertex SplatmapVertex
             #pragma fragment SplatmapFragment
 
             #define _METALLICSPECGLOSSMAP 1
@@ -273,8 +274,41 @@ Shader "Universal Render Pipeline/Terrain/Lit"
             ENDHLSL
         }
 
+        Pass
+        {
+            Name "Debug Overdraw"
+            Tags {"LightMode" = "DebugOverdraw"}
+
+            Blend One One
+            ZWrite On
+            Cull Back
+
+            HLSLPROGRAM
+            #pragma target 3.0
+
+            // -------------------------------------
+            // Unity defined keywords
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
+            #pragma shader_feature_local_fragment _TERRAIN_BLEND_HEIGHT
+
+            // Sample normal in pixel shader when doing instancing
+            #pragma shader_feature_local _TERRAIN_INSTANCED_PERPIXEL_NORMAL
+
+            #define _DEBUG_SHADER
+
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/Terrain/TerrainLitInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/Terrain/TerrainLitPasses.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/Shaders/Debug/DebugOverdrawPass.hlsl"
+
+            #pragma vertex SplatmapVertex
+            #pragma fragment OverdrawFragment
+            ENDHLSL
+        }
+
         UsePass "Hidden/Nature/Terrain/Utilities/PICKING"
     }
+
     Dependency "AddPassShader" = "Hidden/Universal Render Pipeline/Terrain/Lit (Add Pass)"
     Dependency "BaseMapShader" = "Hidden/Universal Render Pipeline/Terrain/Lit (Base Pass)"
     Dependency "BaseMapGenShader" = "Hidden/Universal Render Pipeline/Terrain/Lit (Basemap Gen)"

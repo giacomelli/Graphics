@@ -54,7 +54,7 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Base Pass)"
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 
-            #pragma vertex SplatmapVert
+            #pragma vertex SplatmapVertex
             #pragma fragment SplatmapFragment
 
             #pragma shader_feature_local _NORMALMAP
@@ -121,7 +121,7 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Base Pass)"
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling nomatrices nolightprobe nolightmap
 
-            #pragma vertex SplatmapVert
+            #pragma vertex SplatmapVertex
             #pragma fragment SplatmapFragment
 
             #pragma shader_feature_local _NORMALMAP

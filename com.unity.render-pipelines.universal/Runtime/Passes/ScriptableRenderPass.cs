@@ -183,6 +183,7 @@ namespace UnityEngine.Rendering.Universal
         Color m_ClearColor = Color.black;
 
         private static readonly ShaderTagId s_DebugMaterialShaderTagId = new ShaderTagId("DebugMaterial");
+        private static readonly ShaderTagId s_DebugOverdrawShaderTagId = new ShaderTagId("DebugOverdraw");
 
         public DebugHandler DebugHandler { get; set; }
 
@@ -408,14 +409,29 @@ namespace UnityEngine.Rendering.Universal
             return lhs.renderPassEvent > rhs.renderPassEvent;
         }
 
+        private ShaderTagId DebugShaderTagId
+        {
+            get
+            {
+                if(DebugHandler.TryGetSceneOverride(out SceneOverrides sceneOverride) && (sceneOverride == SceneOverrides.Overdraw))
+                {
+                    return s_DebugOverdrawShaderTagId;
+                }
+                else
+                {
+                    return s_DebugMaterialShaderTagId;
+                }
+            }
+        }
+
         [Conditional("DEVELOPMENT_BUILD"), Conditional("UNITY_EDITOR")]
         protected void RenderObjectWithDebug(ScriptableRenderContext context, List<ShaderTagId> shaderTagIds,
             ref RenderingData renderingData, FilteringSettings filterSettings, SortingCriteria sortingCriteria)
         {
             bool overrideMaterial = DebugHandler.TryGetReplacementMaterial(out Material replacementMaterial);
             DrawingSettings debugSettings = overrideMaterial
-                ? CreateDrawingSettings(shaderTagIds, ref renderingData, sortingCriteria)
-                : CreateDrawingSettings(s_DebugMaterialShaderTagId, ref renderingData, sortingCriteria);
+                                          ? CreateDrawingSettings(shaderTagIds, ref renderingData, sortingCriteria)
+                                          : CreateDrawingSettings(DebugShaderTagId, ref renderingData, sortingCriteria);
 
             if (overrideMaterial)
             {

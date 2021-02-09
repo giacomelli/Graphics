@@ -1,5 +1,4 @@
 
-using System;
 using System.Diagnostics;
 using UnityEditor.Rendering;
 using UnityEngine.Rendering.Universal.Internal;
@@ -10,7 +9,6 @@ namespace UnityEngine.Rendering.Universal
     {
         private readonly Material m_FullScreenDebugMaterial;
         private readonly Texture2D m_NumberFontTexture;
-        private readonly Material m_ReplacementMaterial;
 
         private readonly int m_DebugMaterialIndexId;
         private readonly int m_DebugLightingIndexId;
@@ -39,19 +37,15 @@ namespace UnityEngine.Rendering.Universal
         public bool AreShadowCascadesActive => LightingSettings.m_LightingDebugMode == LightingDebugMode.ShadowCascades;
         public bool IsMipInfoDebugActive => RenderingSettings.mipInfoDebugMode != DebugMipInfo.None;
 
-        public bool IsReplacementMaterialNeeded => IsSceneOverrideActive || IsVertexAttributeOverrideActive;
-
-        public bool IsDebugMaterialActive
-        {
-            get
-            {
-                bool isMaterialDebugActive = IsLightingDebugActive || IsMaterialOverrideActive || IsLightingFeatureActive ||
+        public bool IsDebugMaterialActive => IsLightingDebugActive || IsMaterialOverrideActive || IsLightingFeatureActive ||
                                              IsVertexAttributeOverrideActive || IsMipInfoDebugActive ||
                                              ValidationSettings.validationMode == DebugValidationMode.ValidateAlbedo;
 
-                return isMaterialDebugActive;
-            }
-        }
+        // TODO: I think we need to remove this replacement material - it breaks any shader-pass with a vertex program...
+        private readonly Material m_ReplacementMaterial;
+        public bool IsReplacementMaterialNeeded => (RenderingSettings.sceneOverrides == SceneOverrides.Wireframe) ||
+                                                   (RenderingSettings.sceneOverrides == SceneOverrides.SolidWireframe) ||
+                                                   IsVertexAttributeOverrideActive;
 
         public DebugHandler(ScriptableRendererData scriptableRendererData)
         {

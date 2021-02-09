@@ -54,7 +54,7 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Add Pass)"
             HLSLPROGRAM
             #pragma target 3.0
 
-            #pragma vertex SplatmapVert
+            #pragma vertex SplatmapVertex
             #pragma fragment SplatmapFragment
 
             // -------------------------------------
@@ -97,7 +97,7 @@ Shader "Hidden/Universal Render Pipeline/Terrain/Lit (Add Pass)"
             HLSLPROGRAM
             #pragma exclude_renderers gles
             #pragma target 3.0
-            #pragma vertex SplatmapVert
+            #pragma vertex SplatmapVertex
             #pragma fragment SplatmapFragment
 
             // -------------------------------------
