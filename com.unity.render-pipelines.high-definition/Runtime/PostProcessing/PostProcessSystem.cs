@@ -3357,14 +3357,12 @@ namespace UnityEngine.Rendering.HighDefinition
         static void DoFinalPass(in FinalPassParameters  parameters,
             RTHandle                source,
             RTHandle                afterPostProcessTexture,
-            RTHandle                destinationHandle,
+            RenderTargetIdentifier  destination,
             RTHandle                alphaTexture,
             CommandBuffer           cmd)
         {
-
             // Final pass has to be done in a pixel shader as it will be the one writing straight
             // to the backbuffer eventually
-            RenderTargetIdentifier destination = destinationHandle;
 
             Material finalPassMaterial = parameters.finalPassMaterial;
             HDCamera hdCamera = parameters.hdCamera;
@@ -3468,8 +3466,9 @@ namespace UnityEngine.Rendering.HighDefinition
             {
                 if (dynResHandler.HardwareDynamicResIsEnabled())
                 {
-                    backBufferRect.width = destinationHandle.rt.width;
-                    backBufferRect.height = destinationHandle.rt.height;
+                    //TODO: it migth be safe to delete this entire block of code. Will have to investigate this part a bit
+                    backBufferRect.width = dynResHandler.finalViewport.x;
+                    backBufferRect.height = dynResHandler.finalViewport.y;
                 }
                 backBufferRect.x = backBufferRect.y = 0;
             }

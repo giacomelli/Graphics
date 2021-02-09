@@ -219,10 +219,13 @@ namespace UnityEngine.Rendering
 
             if (DynamicResolutionHandler.instance.HardwareDynamicResIsEnabled() && m_HardwareDynamicResRequested)
             {
-                var scaledFinalViewport = DynamicResolutionHandler.instance.GetScaledSize(DynamicResolutionHandler.instance.finalViewport);
-                var scaledMaxViewport = DynamicResolutionHandler.instance.GetScaledSize(new Vector2Int(GetMaxWidth(), GetMaxHeight()));
-                float xScale = (float)scaledFinalViewport.x / (float)scaledMaxViewport.x;
-                float yScale = (float)scaledFinalViewport.y / (float)scaledMaxViewport.y;
+     
+                Vector2Int maxSize = new Vector2Int(GetMaxWidth(), GetMaxHeight());
+                // Making the final scale in 'drs' space, since the final scale must account for rounding pixel values.
+                var scaledFinalViewport = DynamicResolutionHandler.instance.ApplyScalesOnSize(DynamicResolutionHandler.instance.finalViewport);
+                var scaledMaxSize = DynamicResolutionHandler.instance.ApplyScalesOnSize(maxSize);
+                float xScale = (float)scaledFinalViewport.x / (float)scaledMaxSize.x;
+                float yScale = (float)scaledFinalViewport.y / (float)scaledMaxSize.y;
                 m_RTHandleProperties.rtHandleScale = new Vector4(xScale, yScale, m_RTHandleProperties.rtHandleScale.x, m_RTHandleProperties.rtHandleScale.y);
             }
             else
