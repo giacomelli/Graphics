@@ -2032,6 +2032,7 @@ namespace UnityEngine.Rendering.HighDefinition
         struct BlitFinalCameraTextureParameters
         {
             public bool                     flip;
+            public bool                     useScaleBias;
             public int                      srcTexArraySlice;
             public int                      dstTexArraySlice;
             public Rect                     viewport;
@@ -2060,7 +2061,7 @@ namespace UnityEngine.Rendering.HighDefinition
 
             parameters.flip = hdCamera.flipYMode == HDAdditionalCameraData.FlipYMode.ForceFlipY || hdCamera.isMainGameView;
             parameters.blitMaterial = HDUtils.GetBlitMaterial(TextureXR.useTexArray ? TextureDimension.Tex2DArray : TextureDimension.Tex2D, singleSlice: parameters.srcTexArraySlice >= 0);
-
+            parameters.useScaleBias = !DynamicResolutionHandler.instance.HardwareDynamicResIsEnabled();
             return parameters;
         }
 
@@ -2068,8 +2069,7 @@ namespace UnityEngine.Rendering.HighDefinition
         {
             // Here we can't use the viewport scale provided in hdCamera. The reason is that this scale is for internal rendering before post process with dynamic resolution factored in.
             // Here the input texture is already at the viewport size but may be smaller than the RT itself (because of the RTHandle system) so we compute the scale specifically here.
-            var scaleBias = new Vector4((float)parameters.viewport.width / source.rt.width, (float)parameters.viewport.height / source.rt.height, 0.0f, 0.0f);
-
+            var scaleBias = parameters.useScaleBias ? new Vector4((float)parameters.viewport.width / source.rt.width, (float)parameters.viewport.height / source.rt.height, 0.0f, 0.0f) : new Vector4(1.0f, 1.0f, 0.0f, 0.0f);            
             if (parameters.flip)
             {
                 scaleBias.w = scaleBias.y;
