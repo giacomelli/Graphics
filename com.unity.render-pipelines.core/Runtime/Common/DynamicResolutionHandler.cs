@@ -109,6 +109,25 @@ namespace UnityEngine.Rendering
             }
         }
 
+        public Vector2 GetResolvedScale()
+        {
+            if (!m_Enabled || !m_CurrentCameraRequest)
+            {
+                return new Vector2(1.0f, 1.0f);
+            }
+
+            float scaleFractionX = m_CurrentFraction;
+            float scaleFractionY = m_CurrentFraction;
+            if (!m_ForceSoftwareFallback && type == DynamicResolutionType.Hardware)
+            {
+                scaleFractionX = ScalableBufferManager.widthScaleFactor;
+                scaleFractionY = ScalableBufferManager.heightScaleFactor;
+            }
+
+            return new Vector2(scaleFractionX, scaleFractionY);
+        }
+
+
         /// <summary>
         /// Set the scaler method used to drive dynamic resolution.
         /// </summary>
@@ -254,10 +273,8 @@ namespace UnityEngine.Rendering
 
         /// <summary>
         /// Applies to the passed size the scale imposed by the dynamic resolution system.
-        /// Note: this function is pure (has no side effects).
+        /// Note: this function is pure (has no side effects), this function does not cache the pre-scale size
         /// </summary>
-        /// <param name="resolvedScales">Scale amount to use. Optionally, could utilize GetScaledSize function to get the scales desired, but this function is safer
-        /// since it doesn't have any side effects.</param>
         /// <param name="size">The size to apply the scaling</param>
         /// <returns>The parameter size scaled by the dynamic resolution system.</returns>
         public Vector2Int ApplyScalesOnSize(Vector2Int size)
@@ -280,29 +297,6 @@ namespace UnityEngine.Rendering
         public float GetCurrentScale()
         {
             return (m_Enabled && m_CurrentCameraRequest) ? m_CurrentFraction : 1.0f;
-        }
-
-        /// <summary>
-        /// Gets the resolved scale percentages.
-        /// Note: this function is pure, and has no side effects.
-        /// </summary>
-        /// <returns>The resolved drs scales (from 0 to 1, for x and y). These might change depending on what the hardware supports.</returns>
-        public Vector2 GetResolvedScale()
-        {
-            if (!m_Enabled || !m_CurrentCameraRequest)
-            {
-                return new Vector2(1.0f, 1.0f);
-            }
-
-            float scaleFractionX = m_CurrentFraction;
-            float scaleFractionY = m_CurrentFraction;
-            if (!m_ForceSoftwareFallback && type == DynamicResolutionType.Hardware)
-            {
-                scaleFractionX = ScalableBufferManager.widthScaleFactor;
-                scaleFractionY = ScalableBufferManager.heightScaleFactor;
-            }
-
-            return new Vector2(scaleFractionX, scaleFractionY);
         }
 
         /// <summary>
