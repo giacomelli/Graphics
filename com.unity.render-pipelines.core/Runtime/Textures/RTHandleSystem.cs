@@ -219,7 +219,6 @@ namespace UnityEngine.Rendering
 
             if (DynamicResolutionHandler.instance.HardwareDynamicResIsEnabled() && m_HardwareDynamicResRequested)
             {
-     
                 Vector2Int maxSize = new Vector2Int(GetMaxWidth(), GetMaxHeight());
                 // Making the final scale in 'drs' space, since the final scale must account for rounding pixel values.
                 var scaledFinalViewport = DynamicResolutionHandler.instance.ApplyScalesOnSize(DynamicResolutionHandler.instance.finalViewport);
