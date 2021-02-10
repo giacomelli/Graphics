@@ -127,7 +127,6 @@ namespace UnityEngine.Rendering
             return new Vector2(scaleFractionX, scaleFractionY);
         }
 
-
         /// <summary>
         /// Set the scaler method used to drive dynamic resolution.
         /// </summary>
