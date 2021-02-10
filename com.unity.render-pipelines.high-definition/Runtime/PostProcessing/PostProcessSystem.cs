@@ -3464,12 +3464,6 @@ namespace UnityEngine.Rendering.HighDefinition
             // Final viewport is handled in the final blit in this case
             if (!HDUtils.PostProcessIsFinalPass(hdCamera))
             {
-                if (dynResHandler.HardwareDynamicResIsEnabled())
-                {
-                    //TODO: it migth be safe to delete this entire block of code. Will have to investigate this part a bit
-                    backBufferRect.width = dynResHandler.finalViewport.x;
-                    backBufferRect.height = dynResHandler.finalViewport.y;
-                }
                 backBufferRect.x = backBufferRect.y = 0;
             }
 
